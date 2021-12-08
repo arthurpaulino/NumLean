@@ -21,6 +21,6 @@ def cLibTarget (pkgDir : FilePath) : FileTarget :=
 
 package NumLean (pkgDir) {
   srcDir := leanSoureDir
-  libRoots := #[`NumLean]
+  libRoots := #[`NumLean, `Utils]
   moreLibTargets := #[cLibTarget pkgDir]
 }

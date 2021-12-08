@@ -7,7 +7,13 @@
 import NumLean
 
 def main : IO Unit := do
-  let m ← NLMatrix.id 10
-  let t : Tensor := Tensor.new m ↠ plus 5.5
+  let id ← NLMatrix.id 5
+  -- let ones ← NLMatrix.new 5 5 1
+  let t : Tensor ← Tensor.new id ↠ plusF 4 ↠ plusF 6.0
   let m' : NLMatrix ← t.compute
-  IO.println $ ←(m'.get 1 0)
+  IO.println $ ← m'.toString
+-- 11.0 10.0 10.0 10.0 10.0 
+-- 10.0 10.0  6.0  6.0  6.0 ← these 6's are bugs
+-- 10.0 10.0 11.0 10.0 10.0 
+-- 10.0 10.0 10.0 11.0 10.0 
+-- 10.0 10.0 10.0 10.0 11.0
