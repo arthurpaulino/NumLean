@@ -7,6 +7,7 @@
 import NumLean
 
 def main : IO Unit := do
-  let arr ← NLArray.mk 10
-  let t := Tensor.new arr ↠ plus 5.0 ↠ times 10.0
-  t.compute
+  let m ← NLMatrix.id 10
+  let t : Tensor := Tensor.new m ↠ plus 5.5
+  let m' : NLMatrix ← t.compute
+  IO.println $ ←(m'.get 1 0)

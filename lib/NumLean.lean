@@ -11,31 +11,46 @@ builtin_initialize init
 
 universe u
 
-constant NLArray : Type
+constant NLMatrix : Type
 
-namespace NLArray
+namespace NLMatrix
 
-@[extern "nl_array_mk"]
-constant mk (length : UInt64) : IO NLArray
+@[extern "nl_matrix_new"]
+constant new (nRows nCols : UInt64) (defaultValue : Float := 0.0) : IO NLMatrix
 
--- @[extern "nl_array_to_lean_array"]
--- constant toArray (a : NLArray) : Array Float
+@[extern "nl_matrix_id"]
+constant id (n : UInt64) : IO NLMatrix
 
-@[extern "nl_array_plus_float"]
-constant plusFloat (a : NLArray) (f : Float) : IO Unit
+@[extern "nl_matrix_n_rows"]
+constant nRows (m : NLMatrix) : IO UInt64
 
-def minusFloat (a : NLArray) (f : Float) : IO Unit := a.plusFloat (-1.0 * f)
+@[extern "nl_matrix_n_cols"]
+constant nCols (m : NLMatrix) : IO UInt64
 
-@[extern "nl_array_times_float"]
-constant timesFloat (a : NLArray) (f : Float) : IO Unit
+@[extern "nl_matrix_get"]
+constant get (m : NLMatrix) (row col : UInt64) : IO Float
 
-def divFloat (a : NLArray) (f : Float) : IO Unit := a.timesFloat (1.0 / f)
+@[extern "nl_matrix_plus_float"]
+constant plusFloat (m : NLMatrix) (f : Float) : IO NLMatrix
 
-end NLArray
+def minusFloat (m : NLMatrix) (f : Float) : IO NLMatrix := m.plusFloat (-1.0 * f)
+
+@[extern "nl_matrix_times_float"]
+constant timesFloat (m : NLMatrix) (f : Float) : IO NLMatrix
+
+def divFloat (m : NLMatrix) (f : Float) : IO NLMatrix := m.timesFloat (1.0 / f)
+
+def toString (m : NLMatrix) : IO String := do
+  let nRows ← m.nRows
+  let nCols ← m.nCols
+  let mut res : String := ""
+  res
+
+end NLMatrix
 
 mutual
   inductive Tensor
-    | mk (head : NLArray) (steps : List TensorStep)
+    | mk (head : IO NLMatrix) (steps : List TensorStep)
   inductive TensorStep
     | plusFloat (f : Float)
     | minusFloat (f : Float)
@@ -46,21 +61,24 @@ end
 
 namespace Tensor
 
-def new (head : NLArray) : Tensor := ⟨head, []⟩
+def new (head : NLMatrix) : Tensor := ⟨head, []⟩
 
 def steps : Tensor → List TensorStep
 | mk _ steps => steps
 
-def head : Tensor → NLArray
+def head : Tensor → IO NLMatrix
 | mk head _ => head
 
-def compute (t : Tensor) : IO Unit :=
-  for step in t.steps do
-    match step with
-    | TensorStep.plusFloat f => t.head.plusFloat f
-    | TensorStep.minusFloat f => t.head.minusFloat f
-    | TensorStep.timesFloat f => t.head.timesFloat f
-    | TensorStep.divFloat f => t.head.divFloat f
+def applyStep (m : IO NLMatrix) (s : TensorStep) : IO NLMatrix := do
+  let m' : NLMatrix ← m
+  match s with
+  | TensorStep.plusFloat f => m'.plusFloat f
+  | TensorStep.minusFloat f => m'.minusFloat f
+  | TensorStep.timesFloat f => m'.timesFloat f
+  | TensorStep.divFloat f => m'.divFloat f
+
+def compute (t : Tensor) : IO NLMatrix :=
+  t.steps.foldl applyStep t.head
 
 end Tensor
 
