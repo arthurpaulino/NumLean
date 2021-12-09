@@ -99,6 +99,8 @@ mutual
     | minusFloat (f : Float)
     | timesFloat (f : Float)
     | divFloat (f : Float)
+    | plusMatrix (m : NLMatrix)
+    | timesMatrix (m : NLMatrix)
     | plusTensor (t : Tensor)
     | timesTensor (t : Tensor)
     deriving Inhabited
@@ -114,40 +116,43 @@ def steps : Tensor → List TensorStep
 def head : Tensor → IO NLMatrix
 | mk head _ => head
 
+def plusShape (shape shape' : UInt32 × UInt32) : UInt32 × UInt32 :=
+  if shape.fst = shape'.fst ∧ shape.snd = shape'.snd then
+    shape'
+  else
+    panic! "inconsistent dimensions on sum"
+
+def timesShape (shape shape' : UInt32 × UInt32) : UInt32 × UInt32 :=
+  if shape.snd = shape'.fst then
+    (shape.fst, shape'.snd)
+  else
+    panic! "inconsistent dimensions on sum"
+
 partial def computeStepShape
   (shape : IO (UInt32 × UInt32))
   (s : TensorStep) : IO (UInt32 × UInt32) := do
-  let shape' ← shape
+  let shapeCurrent ← shape
   match s with
-  | TensorStep.transpose => (shape'.snd, shape'.fst)
-  | TensorStep.plusTensor t =>
-    let tShape ← t.steps.foldl computeStepShape (← t.head).shape
-    if shape'.fst = tShape.fst ∧ shape'.snd = tShape.snd then
-      shape'
-    else
-      panic! "inconsistent dimensions on sum"
+  | TensorStep.transpose     => (shapeCurrent.snd, shapeCurrent.fst)
+  | TensorStep.plusMatrix m  => plusShape shapeCurrent (← m.shape)
+  | TensorStep.timesMatrix m => timesShape shapeCurrent (← m.shape)
+  | TensorStep.plusTensor t  =>
+    plusShape shapeCurrent (← t.steps.foldl computeStepShape (← t.head).shape)
   | TensorStep.timesTensor t =>
-    let tShape ← t.steps.foldl computeStepShape (← t.head).shape
-    if shape'.snd = tShape.fst then
-      (shape'.fst, tShape.snd)
-    else
-      panic! "inconsistent dimensions on product"
-  | _ => shape
+    timesShape shapeCurrent (← t.steps.foldl computeStepShape (← t.head).shape)
+  | _                        => shape
 
 partial def computeStep (m : IO NLMatrix) (s : TensorStep) : IO NLMatrix := do
-  let m' : NLMatrix ← m
   match s with
-  | TensorStep.transpose     => m'.transpose
-  | TensorStep.plusFloat f   => m'.plusFloat f
-  | TensorStep.minusFloat f  => m'.minusFloat f
-  | TensorStep.timesFloat f  => m'.timesFloat f
-  | TensorStep.divFloat f    => m'.divFloat f
-  | TensorStep.plusTensor t  =>
-    let t' : NLMatrix ← (t.steps.foldl computeStep t.head)
-    m'.plusNLMatrix t'
-  | TensorStep.timesTensor t =>
-    let t' : NLMatrix ← (t.steps.foldl computeStep t.head)
-    m'.timesNLMatrix t'
+  | TensorStep.transpose       => (← m).transpose
+  | TensorStep.plusFloat f     => (← m).plusFloat f
+  | TensorStep.minusFloat f    => (← m).minusFloat f
+  | TensorStep.timesFloat f    => (← m).timesFloat f
+  | TensorStep.divFloat f      => (← m).divFloat f
+  | TensorStep.plusMatrix m''  => (← m).plusNLMatrix m''
+  | TensorStep.timesMatrix m'' => (← m).timesNLMatrix m''
+  | TensorStep.plusTensor t    => (← m).plusNLMatrix (← t.steps.foldl computeStep t.head)
+  | TensorStep.timesTensor t   => (← m).timesNLMatrix (← t.steps.foldl computeStep t.head)
 
 def computeShape (t : Tensor) : IO (UInt32 × UInt32) := do
   t.steps.foldl computeStepShape (← t.head).shape

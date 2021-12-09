@@ -64,19 +64,11 @@ internal nl_matrix* nl_matrix_copy(nl_matrix* m) {
 }
 
 internal double get_val(nl_matrix* m, uint32_t i, uint32_t j) {
-    return *(m->data + (j + i * m->n_cols) * sizeof(double)); // this product may overflow
+    return m->data[j + i * m->n_cols];
 }
 
 internal void set_val(nl_matrix* m, uint32_t i, uint32_t j, double v) {
-    *(m->data + (j + i * m->n_cols) * sizeof(double)) = v; // this product may overflow
-}
-
-internal double get_val_(nl_matrix* m, uint32_t i) {
-    return *(m->data + i * sizeof(double)); // this product may overflow
-}
-
-internal void set_val_(nl_matrix* m, uint32_t i, double v) {
-    *(m->data + i * sizeof(double)) = v; // this product may overflow
+    m->data[j + i * m->n_cols] = v;
 }
 
 internal l_obj* nl_matrix_box(nl_matrix* m) {
@@ -109,7 +101,7 @@ external l_res nl_matrix_new(uint32_t n_rows, uint32_t n_cols, double v) {
         return make_error(ERROR_INSUF_MEM);
     }
     for (uint32_t i = 0; i < m->length; i++) {
-        set_val_(m, i, v);
+        m->data[i] = v;
     }
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
@@ -174,7 +166,7 @@ external l_res nl_matrix_plus_float(l_arg _m, double f) {
         return make_error(ERROR_INSUF_MEM);
     }
     for (uint32_t i = 0; i < m->length; i++) {
-        set_val_(m, i, f + get_val_(m, i));
+        m->data[i] = f + m->data[i];
     }
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
@@ -185,7 +177,7 @@ external l_res nl_matrix_times_float(l_arg _m, double f) {
         return make_error(ERROR_INSUF_MEM);
     }
     for (uint32_t i = 0; i < m->length; i++) {
-        set_val_(m, i, f * get_val_(m, i));
+        m->data[i] = f * m->data[i];
     }
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
@@ -198,7 +190,7 @@ external l_res nl_matrix_plus_nl_matrix(l_arg _m, l_arg __m) {
         return make_error(ERROR_INSUF_MEM);
     }
     for (uint32_t i = 0; i < m->length; i++) {
-        set_val_(m__, i, get_val_(m, i) + get_val_(m_, i));
+        m__->data[i] = m->data[i] + m_->data[i];
     }
     return lean_io_result_mk_ok(nl_matrix_box(m__));
 }
