@@ -157,6 +157,17 @@ external l_res nl_matrix_get_value(l_arg _m, uint32_t i, uint32_t j) {
     return lean_io_result_mk_ok(lean_box_float(get_val(m, i, j)));
 }
 
+external l_res nl_matrix_transpose(l_arg _m) {
+    nl_matrix* m = nl_matrix_unbox(_m);
+    nl_matrix* m_ = nl_matrix_alloc(m->n_cols, m->n_rows);
+    for (uint32_t i = 0; i < m->n_rows; i++) {
+        for (uint32_t j = 0; j < m->n_cols; j++) {
+            set_val(m_, j, i, get_val(m, i, j));
+        }
+    }
+    return lean_io_result_mk_ok(nl_matrix_box(m_));
+}
+
 external l_res nl_matrix_plus_float(l_arg _m, double f) {
     nl_matrix* m = nl_matrix_copy(nl_matrix_unbox(_m));
     if (!m) {

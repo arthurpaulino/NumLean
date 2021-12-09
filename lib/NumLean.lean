@@ -39,6 +39,9 @@ def shape (m : NLMatrix) : IO (UInt32 × UInt32) := do
 @[extern "nl_matrix_get_value"]
 constant getValue (m : NLMatrix) (row col : UInt32) : IO Float
 
+@[extern "nl_matrix_transpose"]
+constant transpose (m : NLMatrix) : IO NLMatrix
+
 @[extern "nl_matrix_plus_float"]
 constant plusFloat (m : NLMatrix) (f : Float) : IO NLMatrix
 
@@ -91,6 +94,7 @@ mutual
   inductive Tensor
     | mk (head : IO NLMatrix) (steps : List TensorStep)
   inductive TensorStep
+    | transpose
     | plusFloat (f : Float)
     | minusFloat (f : Float)
     | timesFloat (f : Float)
@@ -115,6 +119,7 @@ partial def computeStepShape
   (s : TensorStep) : IO (UInt32 × UInt32) := do
   let shape' ← shape
   match s with
+  | TensorStep.transpose => (shape'.snd, shape'.fst)
   | TensorStep.plusTensor t =>
     let tShape ← t.steps.foldl computeStepShape (← t.head).shape
     if shape'.fst = tShape.fst ∧ shape'.snd = tShape.snd then
@@ -132,11 +137,12 @@ partial def computeStepShape
 partial def computeStep (m : IO NLMatrix) (s : TensorStep) : IO NLMatrix := do
   let m' : NLMatrix ← m
   match s with
-  | TensorStep.plusFloat f  => m'.plusFloat f
-  | TensorStep.minusFloat f => m'.minusFloat f
-  | TensorStep.timesFloat f => m'.timesFloat f
-  | TensorStep.divFloat f   => m'.divFloat f
-  | TensorStep.plusTensor t =>
+  | TensorStep.transpose     => m'.transpose
+  | TensorStep.plusFloat f   => m'.plusFloat f
+  | TensorStep.minusFloat f  => m'.minusFloat f
+  | TensorStep.timesFloat f  => m'.timesFloat f
+  | TensorStep.divFloat f    => m'.divFloat f
+  | TensorStep.plusTensor t  =>
     let t' : NLMatrix ← (t.steps.foldl computeStep t.head)
     m'.plusNLMatrix t'
   | TensorStep.timesTensor t =>
@@ -151,6 +157,9 @@ def compute (t : Tensor) : IO NLMatrix := do
   t.steps.foldl computeStep t.head
 
 end Tensor
+
+def transpose (t : Tensor) : Tensor :=
+  ⟨t.head, t.steps.concat (TensorStep.transpose)⟩
 
 def plusF (f : Float) (t : Tensor) : Tensor :=
   ⟨t.head, t.steps.concat (TensorStep.plusFloat f)⟩
