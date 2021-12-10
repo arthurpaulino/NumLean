@@ -130,13 +130,12 @@ external l_res nl_matrix_n_cols(l_arg _m) {
     return lean_io_result_mk_ok(lean_box_uint32(nl_matrix_unbox(_m)->n_cols));
 }
 
-// todo: segmentation fault
-// external l_res nl_matrix_get_values(l_arg _m) {
-//     nl_matrix* m = nl_matrix_unbox(_m);
-//     l_res ret = lean_alloc_sarray(sizeof(double), m->length, m->length);
-//     memcpy(lean_float_array_cptr(ret), m->data, m->length * sizeof(double));
-//     return lean_io_result_mk_ok(ret);
-// }
+external l_res nl_matrix_get_values(l_arg _m) {
+    nl_matrix* m = nl_matrix_unbox(_m);
+    l_res ret = lean_alloc_sarray(sizeof(double), m->length, m->length);
+    memcpy(lean_float_array_cptr(ret), m->data, m->length * sizeof(double));
+    return lean_io_result_mk_ok(ret);
+}
 
 external l_res nl_matrix_get_value(l_arg _m, uint32_t i, uint32_t j) {
     nl_matrix* m = nl_matrix_unbox(_m);
@@ -191,6 +190,19 @@ external l_res nl_matrix_plus_nl_matrix(l_arg _m, l_arg __m) {
     }
     for (uint32_t i = 0; i < m->length; i++) {
         m__->data[i] = m->data[i] + m_->data[i];
+    }
+    return lean_io_result_mk_ok(nl_matrix_box(m__));
+}
+
+external l_res nl_matrix_minus_nl_matrix(l_arg _m, l_arg __m) {
+    nl_matrix* m = nl_matrix_unbox(_m);
+    nl_matrix* m_ = nl_matrix_unbox(__m);
+    nl_matrix* m__ = nl_matrix_alloc(m->n_rows, m->n_cols);
+    if (!m) {
+        return make_error(ERROR_INSUF_MEM);
+    }
+    for (uint32_t i = 0; i < m->length; i++) {
+        m__->data[i] = m->data[i] - m_->data[i];
     }
     return lean_io_result_mk_ok(nl_matrix_box(m__));
 }

@@ -32,9 +32,8 @@ constant nCols (m : NLMatrix) : IO UInt32
 def shape (m : NLMatrix) : IO (UInt32 × UInt32) := do
   (← m.nRows, ← m.nCols)
 
--- todo: segmentation fault
--- @[extern "nl_matrix_get_values"]
--- constant getValues (m : NLMatrix) : IO (Array Float)
+@[extern "nl_matrix_get_values"]
+constant getValues (m : NLMatrix) : IO (FloatArray)
 
 @[extern "nl_matrix_get_value"]
 constant getValue (m : NLMatrix) (row col : UInt32) : IO Float
@@ -55,6 +54,9 @@ def divFloat (m : NLMatrix) (f : Float) : IO NLMatrix := m.timesFloat (1.0 / f)
 @[extern "nl_matrix_plus_nl_matrix"]
 constant plusNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
 
+@[extern "nl_matrix_minus_nl_matrix"]
+constant minusNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
+
 @[extern "nl_matrix_times_nl_matrix"]
 constant timesNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
 
@@ -62,13 +64,13 @@ def toString (m : NLMatrix) : IO String := do
   let (nRows, nCols) ← m.shape
   let nRowsNat ← nRows.toNat
   let nColsNat ← nCols.toNat
+  let values ← m.getValues
   let mut lines : List (List String) ← []
   let mut colLengths : List Nat ← []
   for i in [0 : nRowsNat] do
     let mut line : List String ← []
     for j in [0 : nColsNat] do
-      -- todo: use getValues to decrease communication overhead
-      let v ← m.getValue i.toUInt32 j.toUInt32
+      let v ← values.get! (i + j * nColsNat)
       let s ← v.toString.optimizeFloatString
       let sLength ← s.length
       if i = 0 then
@@ -100,8 +102,10 @@ mutual
     | timesFloat (f : Float)
     | divFloat (f : Float)
     | plusMatrix (m : NLMatrix)
+    | minusMatrix (m : NLMatrix)
     | timesMatrix (m : NLMatrix)
     | plusTensor (t : Tensor)
+    | minusTensor (t : Tensor)
     | timesTensor (t : Tensor)
     deriving Inhabited
 end
@@ -135,8 +139,11 @@ partial def computeStepShape
   match s with
   | TensorStep.transpose     => (shapeCurrent.snd, shapeCurrent.fst)
   | TensorStep.plusMatrix m  => plusShape shapeCurrent (← m.shape)
+  | TensorStep.minusMatrix m => plusShape shapeCurrent (← m.shape)
   | TensorStep.timesMatrix m => timesShape shapeCurrent (← m.shape)
   | TensorStep.plusTensor t  =>
+    plusShape shapeCurrent (← t.steps.foldl computeStepShape (← t.head).shape)
+  | TensorStep.minusTensor t =>
     plusShape shapeCurrent (← t.steps.foldl computeStepShape (← t.head).shape)
   | TensorStep.timesTensor t =>
     timesShape shapeCurrent (← t.steps.foldl computeStepShape (← t.head).shape)
@@ -150,8 +157,10 @@ partial def computeStep (m : IO NLMatrix) (s : TensorStep) : IO NLMatrix := do
   | TensorStep.timesFloat f    => (← m).timesFloat f
   | TensorStep.divFloat f      => (← m).divFloat f
   | TensorStep.plusMatrix m''  => (← m).plusNLMatrix m''
+  | TensorStep.minusMatrix m'' => (← m).minusNLMatrix m''
   | TensorStep.timesMatrix m'' => (← m).timesNLMatrix m''
   | TensorStep.plusTensor t    => (← m).plusNLMatrix (← t.steps.foldl computeStep t.head)
+  | TensorStep.minusTensor t   => (← m).minusNLMatrix (← t.steps.foldl computeStep t.head)
   | TensorStep.timesTensor t   => (← m).timesNLMatrix (← t.steps.foldl computeStep t.head)
 
 def computeShape (t : Tensor) : IO (UInt32 × UInt32) := do
