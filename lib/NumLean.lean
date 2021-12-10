@@ -29,7 +29,9 @@ constant nRows (m : NLMatrix) : IO UInt32
 @[extern "nl_matrix_n_cols"]
 constant nCols (m : NLMatrix) : IO UInt32
 
-def shape (m : NLMatrix) : IO (UInt32 × UInt32) := do
+abbrev shapeType := UInt32 × UInt32
+
+def shape (m : NLMatrix) : IO shapeType := do
   (← m.nRows, ← m.nCols)
 
 @[extern "nl_matrix_get_values"]
@@ -110,6 +112,8 @@ mutual
     deriving Inhabited
 end
 
+open NLMatrix
+
 namespace Tensor
 
 def new (head : NLMatrix) : Tensor := ⟨head, []⟩
@@ -120,21 +124,21 @@ def steps : Tensor → List TensorStep
 def head : Tensor → IO NLMatrix
 | mk head _ => head
 
-def plusShape (shape shape' : UInt32 × UInt32) : UInt32 × UInt32 :=
+def plusShape (shape shape' : shapeType) : shapeType :=
   if shape.fst = shape'.fst ∧ shape.snd = shape'.snd then
     shape'
   else
     panic! "inconsistent dimensions on sum"
 
-def timesShape (shape shape' : UInt32 × UInt32) : UInt32 × UInt32 :=
+def timesShape (shape shape' : shapeType) : shapeType :=
   if shape.snd = shape'.fst then
     (shape.fst, shape'.snd)
   else
     panic! "inconsistent dimensions on sum"
 
 partial def computeStepShape
-  (shape : IO (UInt32 × UInt32))
-  (s : TensorStep) : IO (UInt32 × UInt32) := do
+  (shape : IO shapeType)
+  (s : TensorStep) : IO shapeType := do
   let shapeCurrent ← shape
   match s with
   | TensorStep.transpose     => (shapeCurrent.snd, shapeCurrent.fst)
@@ -163,7 +167,7 @@ partial def computeStep (m : IO NLMatrix) (s : TensorStep) : IO NLMatrix := do
   | TensorStep.minusTensor t   => (← m).minusNLMatrix (← t.steps.foldl computeStep t.head)
   | TensorStep.timesTensor t   => (← m).timesNLMatrix (← t.steps.foldl computeStep t.head)
 
-def computeShape (t : Tensor) : IO (UInt32 × UInt32) := do
+def computeShape (t : Tensor) : IO shapeType := do
   t.steps.foldl computeStepShape (← t.head).shape
 
 def compute (t : Tensor) : IO NLMatrix := do
