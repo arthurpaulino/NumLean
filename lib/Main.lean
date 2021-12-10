@@ -12,3 +12,5 @@ def main : IO Unit := do
   let t : Tensor ← Tensor.new id ↠ plusF 4 ↠ plusT (Tensor.new ones)
   let m' : NLMatrix ← t.compute
   IO.println $ ← m'.toString
+  let m'' ← NLMatrix.fromRows [[1, 2], [4, 5]]
+  IO.println $ ← m''.toString
