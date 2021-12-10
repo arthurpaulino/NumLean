@@ -42,3 +42,31 @@ def leftFillWithUntil (s : String) (f : Char) (n : Nat) : String := do
 
 end String
 
+namespace Array
+
+instance : Coe (Array Float) FloatArray where
+  coe arr := do
+    let mut fArr := FloatArray.empty
+    for f in arr.data do
+      fArr := fArr.push f
+    fArr
+
+instance : Coe (Array Nat) FloatArray where
+  coe arr := do
+    let mut fArr := FloatArray.empty
+    for f in arr.data do
+      fArr := fArr.push f.toFloat
+    fArr
+
+end Array
+
+namespace List
+
+instance : Coe (List Float) FloatArray where
+  coe := toFloatArray
+
+instance : Coe (List Nat) FloatArray where
+  coe l := (l.map λ n => n.toFloat).toFloatArray
+
+end List
+

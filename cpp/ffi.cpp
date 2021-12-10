@@ -122,6 +122,24 @@ external l_res nl_matrix_id(uint32_t n) {
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
 
+external l_res nl_matrix_from_values(uint32_t n_rows, uint32_t n_cols, l_arg float_array) {
+    if (n_rows == 0) {
+        return make_error("invalid number of columns");
+    }
+    if (n_cols == 0) {
+        return make_error("invalid number of rows");
+    }
+    if (n_rows * n_cols != lean_sarray_size(float_array)) {
+        return make_error("inconsistent shape and data size");
+    }
+    nl_matrix* m = nl_matrix_alloc(n_rows, n_cols);
+    if (!m) {
+        return make_error(ERROR_INSUF_MEM);
+    }
+    memcpy(m->data, lean_float_array_cptr(float_array), m->length * sizeof(double));
+    return lean_io_result_mk_ok(nl_matrix_box(m));
+}
+
 external l_res nl_matrix_n_rows(l_arg _m) {
     return lean_io_result_mk_ok(lean_box_uint32(nl_matrix_unbox(_m)->n_rows));
 }

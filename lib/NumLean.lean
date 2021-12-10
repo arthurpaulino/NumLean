@@ -11,8 +11,6 @@ constant init : BaseIO Unit
 
 builtin_initialize init
 
-universe u
-
 constant NLMatrix : Type
 
 namespace NLMatrix
@@ -22,6 +20,20 @@ constant new (nRows nCols : UInt32) (defaultValue : Float := 0.0) : IO NLMatrix
 
 @[extern "nl_matrix_id"]
 constant id (n : UInt32) : IO NLMatrix
+
+@[extern "nl_matrix_from_values"]
+constant fromValues (nRows nCols : UInt32) (values : FloatArray) : IO NLMatrix
+
+def fromRows (rows : List FloatArray) : IO NLMatrix := do
+  if rows.length = 0 then
+    panic! "no data provided"
+  else
+    let mut values ← FloatArray.empty
+    for row in rows do
+      for val in row do
+        values ← values.push val
+    fromValues rows.length.toUInt32 (rows.get! 0).size.toUInt32 values
+
 
 @[extern "nl_matrix_n_rows"]
 constant nRows (m : NLMatrix) : IO UInt32
@@ -72,7 +84,7 @@ def toString (m : NLMatrix) : IO String := do
   for i in [0 : nRowsNat] do
     let mut line : List String ← []
     for j in [0 : nColsNat] do
-      let v ← values.get! (i + j * nColsNat)
+      let v ← values.get! (j + i * nColsNat)
       let s ← v.toString.optimizeFloatString
       let sLength ← s.length
       if i = 0 then
