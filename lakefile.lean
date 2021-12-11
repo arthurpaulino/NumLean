@@ -1,7 +1,7 @@
 import Lake
 open System Lake DSL
 
-def leanSoureDir := "lib"
+def leanSoureDir := "NumLean"
 def cppCompiler := "c++"
 def cppDir : FilePath := "cpp"
 def ffiSrc := cppDir / "ffi.cpp"
@@ -21,6 +21,6 @@ def cLibTarget (pkgDir : FilePath) : FileTarget :=
 
 package NumLean (pkgDir) {
   srcDir := leanSoureDir
-  libRoots := #[`NumLean, `Utils]
+  libRoots := #[`NLTensor, `NLMatrix, `Utils]
   moreLibTargets := #[cLibTarget pkgDir]
 }
