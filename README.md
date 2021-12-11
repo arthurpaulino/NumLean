@@ -19,8 +19,9 @@ It's also possible to stack matrix operations with `NLTensor`. A tensor always s
 with a matrix in the head.
 
 ```lean
-let t : NLTensor ← NLTensor.new id ↠ plusF 4 ↠ plusT (NLTensor.new ones)
--- `t` represents the process of adding 4.0 to `id` and then
+let t : NLTensor ← NLTensor.new id ↠ plusF 3
+  ↠ plusT (NLTensor.new ones ↠ plusF 3)
+-- `t` represents the process of adding 3.0 to `id` and then
 -- summing the result with `ones`
 
 let tResult : NLMatrix ← t.compute
@@ -33,6 +34,9 @@ IO.println $ ← m'.toString
 -- 5.0 5.0 5.0 6.0 5.0 
 -- 5.0 5.0 5.0 5.0 6.0
 ```
+
+This abstraction allows you to create functions that chains transformations without
+duplicating code.
 
 ## Next steps
 
