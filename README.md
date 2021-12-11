@@ -52,3 +52,5 @@ duplicating code.
 
 Feel free to create issues, but please be responsive after doing so. You can also reach
 me on [Zulip](https://leanprover.zulipchat.com/).
+
+Fork and open PRs as you wish. But again, be responsive after doing so :)
