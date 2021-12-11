@@ -66,13 +66,13 @@ constant timesFloat (m : NLMatrix) (f : Float) : IO NLMatrix
 def divFloat (m : NLMatrix) (f : Float) : IO NLMatrix := m.timesFloat (1.0 / f)
 
 @[extern "nl_matrix_plus_nl_matrix"]
-constant plusNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
+constant plusNLMatrix (m m' : NLMatrix) : IO NLMatrix
 
 @[extern "nl_matrix_minus_nl_matrix"]
-constant minusNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
+constant minusNLMatrix (m m': NLMatrix) : IO NLMatrix
 
 @[extern "nl_matrix_times_nl_matrix"]
-constant timesNLMatrix (m : NLMatrix) (m' : NLMatrix) : IO NLMatrix
+constant timesNLMatrix (m m': NLMatrix) : IO NLMatrix
 
 def toString (m : NLMatrix) : IO String := do
   let (nRows, nCols) ← m.shape
@@ -103,5 +103,18 @@ def toString (m : NLMatrix) : IO String := do
       if j = nColsNat - 1 ∧ i ≠ nRowsNat - 1 then
         res ← res ++ "\n"
   res
+
+def plusNLMatrix' (m m': IO NLMatrix) : IO NLMatrix := do
+  (←m).plusNLMatrix (←m')
+
+def minusNLMatrix' (m m': IO NLMatrix) : IO NLMatrix := do
+  (←m).minusNLMatrix (←m')
+
+def timesNLMatrix' (m m': IO NLMatrix) : IO NLMatrix := do
+  (←m).timesNLMatrix (←m')
+
+instance : Add (IO NLMatrix) := ⟨plusNLMatrix'⟩
+instance : Sub (IO NLMatrix) := ⟨minusNLMatrix'⟩
+instance : Mul (IO NLMatrix) := ⟨timesNLMatrix'⟩
 
 end NLMatrix

@@ -40,7 +40,6 @@ duplicating code.
 
 ## Next steps
 
-* Provide a way to say, for instance, `let sum ← ones + id`
 * Optimize representation for some special kinds of matrices
 * Optimize operations for such special matrices
 * Provide more operations like determinant, inverse etc

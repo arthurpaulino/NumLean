@@ -182,8 +182,10 @@ external l_res nl_matrix_plus_float(l_arg _m, double f) {
     if (!m) {
         return make_error(ERROR_INSUF_MEM);
     }
-    for (uint32_t i = 0; i < m->length; i++) {
-        m->data[i] = f + m->data[i];
+    if (f != 0.0) {
+        for (uint32_t i = 0; i < m->length; i++) {
+            m->data[i] = f + m->data[i];
+        }
     }
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
@@ -193,8 +195,10 @@ external l_res nl_matrix_times_float(l_arg _m, double f) {
     if (!m) {
         return make_error(ERROR_INSUF_MEM);
     }
-    for (uint32_t i = 0; i < m->length; i++) {
-        m->data[i] = f * m->data[i];
+    if (f != 0.0) {
+        for (uint32_t i = 0; i < m->length; i++) {
+            m->data[i] = f * m->data[i];
+        }
     }
     return lean_io_result_mk_ok(nl_matrix_box(m));
 }
@@ -202,6 +206,9 @@ external l_res nl_matrix_times_float(l_arg _m, double f) {
 external l_res nl_matrix_plus_nl_matrix(l_arg _m, l_arg __m) {
     nl_matrix* m = nl_matrix_unbox(_m);
     nl_matrix* m_ = nl_matrix_unbox(__m);
+    if (m->n_rows != m_->n_rows || m->n_cols != m_->n_cols) {
+        return make_error("inconsistent dimensions on sum");
+    }
     nl_matrix* m__ = nl_matrix_alloc(m->n_rows, m->n_cols);
     if (!m) {
         return make_error(ERROR_INSUF_MEM);
@@ -215,6 +222,9 @@ external l_res nl_matrix_plus_nl_matrix(l_arg _m, l_arg __m) {
 external l_res nl_matrix_minus_nl_matrix(l_arg _m, l_arg __m) {
     nl_matrix* m = nl_matrix_unbox(_m);
     nl_matrix* m_ = nl_matrix_unbox(__m);
+    if (m->n_rows != m_->n_rows || m->n_cols != m_->n_cols) {
+        return make_error("inconsistent dimensions on subtraction");
+    }
     nl_matrix* m__ = nl_matrix_alloc(m->n_rows, m->n_cols);
     if (!m) {
         return make_error(ERROR_INSUF_MEM);
@@ -228,6 +238,9 @@ external l_res nl_matrix_minus_nl_matrix(l_arg _m, l_arg __m) {
 external l_res nl_matrix_times_nl_matrix(l_arg _m, l_arg __m) {
     nl_matrix* m = nl_matrix_unbox(_m);
     nl_matrix* m_ = nl_matrix_unbox(__m);
+    if (m->n_cols != m_->n_rows) {
+        return make_error("inconsistent dimensions on product");
+    }
     nl_matrix* m__ = nl_matrix_alloc(m->n_rows, m_->n_cols);
     if (!m) {
         return make_error(ERROR_INSUF_MEM);

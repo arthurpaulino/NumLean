@@ -22,7 +22,7 @@ open NLMatrix
 
 namespace NLTensor
 
-def new (head : NLMatrix) : NLTensor := ⟨head, []⟩
+def new (head : IO NLMatrix) : NLTensor := ⟨head, []⟩
 
 def steps : NLTensor → List NLTensorStep
 | mk _ steps => steps
