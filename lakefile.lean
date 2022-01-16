@@ -3,8 +3,8 @@ open System Lake DSL
 
 def leanSoureDir := "NumLean"
 def cppCompiler := "c++"
-def cppDir : FilePath := "cpp"
-def ffiSrc := cppDir / "ffi.cpp"
+def cppDir : FilePath := "c"
+def ffiSrc := cppDir / "ffi.c"
 def ffiO := "ffi.o"
 def ffiLib := "libffi.a"
 

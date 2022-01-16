@@ -6,7 +6,7 @@
 
 namespace String
 
-def withoutRightmostZeros (s : String) : String := do
+def withoutRightmostZeros (s : String) : String := Id.run do
   if s ≠ "" then
     let data := s.data
     let mut rangeList : List Nat := []
@@ -34,7 +34,7 @@ def optimizeFloatString (s : String) : String :=
     else
       panic! "ill-formed float string"
 
-def leftFillWithUntil (s : String) (f : Char) (n : Nat) : String := do
+def leftFillWithUntil (s : String) (f : Char) (n : Nat) : String := Id.run do
   let mut data : List Char := s.data
   for _ in [0 : n - s.length] do
     data := [f].append data
@@ -45,14 +45,14 @@ end String
 namespace Array
 
 instance : Coe (Array Float) FloatArray where
-  coe arr := do
+  coe arr := Id.run do
     let mut fArr := FloatArray.empty
     for f in arr.data do
       fArr := fArr.push f
     fArr
 
 instance : Coe (Array Nat) FloatArray where
-  coe arr := do
+  coe arr := Id.run do
     let mut fArr := FloatArray.empty
     for f in arr.data do
       fArr := fArr.push f.toFloat
